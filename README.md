@@ -1,4 +1,4 @@
-# gobook
+# gobook Rest API
 
 # Whats Up
 My Exercise for Basic CRUD Rest API with Go Lang
