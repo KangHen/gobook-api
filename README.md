@@ -23,3 +23,6 @@ Completely Task with Basic Rest API CRUD with Go Lang. Understand the Router, Co
 - github.com/gorilla/mux
 - github.com/go-sql-driver/mysql
 - html/template
+
+# Reference
+Database dapat anda temukan di Repo ini [gobook] (https://github.com/KangHen/gobook)
