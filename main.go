@@ -36,17 +36,22 @@ func dbConn() (db *sql.DB) {
     return db
 }
 
+type BookInput struct {
+    Name string `json:"name"`
+    CategoryId int `json:"category_id"`
+}
+
 type BookCategory struct {
     ID int
     Name string
 }
 
 type Book struct{
-    ID int
-    Name string
-    CategoryId int
-    CreatedAt string
-    UpdatedAt *string
+    ID int `json:"id"`
+    Name string `json:"name"`
+    CategoryId int `json:"category_id"`
+    CreatedAt string `json:"created_at"`
+    UpdatedAt *string `json:"updated_at"`
 }
 
 type ResponseBooks struct {
@@ -155,11 +160,12 @@ func bookShow(w http.ResponseWriter, r *http.Request) {
 // bookStore responds to POST requests to "/books/store" and stores the book in the database.
 // It will redirect to "/books" if the book is successfully stored.
 func bookStore(w http.ResponseWriter, r *http.Request) {
-	w.Header().Add("Content-Type", "application/json")
+    var book BookInput
 
+    json.NewDecoder(r.Body).Decode(&book)
     var (
-        name = r.FormValue("name")
-        category_id = r.FormValue("category_id")
+        name = book.Name
+        category_id = book.CategoryId
         created_at = time.Now().Format("2006-01-02 15:04:05")
     )
 
@@ -181,6 +187,7 @@ func bookStore(w http.ResponseWriter, r *http.Request) {
     bookId, err := result.LastInsertId()
 
     if err != nil {
+        w.Header().Add("Content-Type", "application/json")
         w.WriteHeader(http.StatusInternalServerError)
 
         data := ResponseError{
@@ -200,6 +207,7 @@ func bookStore(w http.ResponseWriter, r *http.Request) {
 		Success: bookId > 0,
 	}
 
+    w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 
 	json.NewEncoder(w).Encode(data)
@@ -286,6 +294,24 @@ func bookDelete(w http.ResponseWriter, r *http.Request) {
 	defer db.Close()
 }
 
+func enableCORS(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Set CORS headers
+		w.Header().Set("Access-Control-Allow-Origin", "*") // Adjust "*" to your domain for security
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+
+		// Handle preflight OPTIONS request
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+
+		// Pass to the next handler
+		next.ServeHTTP(w, r)
+	})
+}
+
 // main is the main entry point for the application.
 // It creates a new router and sets up the routes for the books. It then
 // starts the server and listens on port 8000.
@@ -310,9 +336,11 @@ func main() {
     bookRouter := r.PathPrefix("/books").Subrouter()
     bookRouter.HandleFunc("", bookIndex)
     bookRouter.HandleFunc("/show/{id}", bookShow)
-    bookRouter.HandleFunc("/store", bookStore).Methods("POST")
-    bookRouter.HandleFunc("/update/{id}", bookUpdate).Methods("POST")
+    bookRouter.HandleFunc("/store", bookStore)
+    bookRouter.HandleFunc("/update/{id}", bookUpdate)
     bookRouter.HandleFunc("/delete/{id}", bookDelete)
+
+    r.Use(enableCORS)
 
 	fmt.Println("Server is running on port 8000")
     log.Fatal(http.ListenAndServe(":8000", r))
