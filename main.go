@@ -142,7 +142,14 @@ func bookShow(w http.ResponseWriter, r *http.Request) {
     err := db.QueryRow(query, bookId).Scan(&b.ID, &b.Name, &b.CategoryId, &b.CreatedAt, &b.UpdatedAt)
 
     if err != nil {
-        fmt.Fprintf(w, "Book with %s not found and has some error %s", bookId, err)
+        w.Header().Add("Content-Type", "application/json")
+        w.WriteHeader(http.StatusInternalServerError)
+
+        data := ResponseError{
+            Message: err.Error(),
+        }
+
+        json.NewEncoder(w).Encode(data)
 
         return
     }
@@ -152,6 +159,8 @@ func bookShow(w http.ResponseWriter, r *http.Request) {
 		Data: b,
 	}
 
+    w.Header().Add("Content-Type", "application/json")
+    w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(data)
     
     defer db.Close()
@@ -220,20 +229,22 @@ func bookStore(w http.ResponseWriter, r *http.Request) {
 //
 // It will redirect to "/books" if the book is successfully updated.
 func bookUpdate(w http.ResponseWriter, r *http.Request) {
-	w.Header().Add("Content-Type", "application/json")
-
     var bookId = mux.Vars(r)["id"]
 
     db := dbConn()
     query := "UPDATE books SET name = ?, category_id = ?, updated_at = ? WHERE id = ?"
 
-    _, err := db.Exec(query, r.FormValue("name"), r.FormValue("category_id"), time.Now().Format("2006-01-02 15:04:05"), bookId)
+    var book BookInput
+
+    json.NewDecoder(r.Body).Decode(&book)
+    _, err := db.Exec(query, book.Name, book.CategoryId, time.Now().Format("2006-01-02 15:04:05"), bookId)
 
     if err != nil {
         data := ResponseError{
             Message: err.Error(),
         }
 
+	    w.Header().Add("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(data)
         return
     }
@@ -246,6 +257,7 @@ func bookUpdate(w http.ResponseWriter, r *http.Request) {
 		Success: true,
 	}
 
+	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 
 	json.NewEncoder(w).Encode(data)
