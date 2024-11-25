@@ -1,4 +1,5 @@
-# gobook Rest API
+# GoBook Rest API
+This project builth with Golang
 
 # Whats Up
 My Exercise for Basic CRUD Rest API with Go Lang
@@ -25,4 +26,4 @@ Completely Task with Basic Rest API CRUD with Go Lang. Understand the Router, Co
 - html/template
 
 # Reference
-Database dapat anda temukan di Repo ini [gobook] (https://github.com/KangHen/gobook)
+You can find the database in Repp [GoBook](https://github.com/KangHen/gobook)
