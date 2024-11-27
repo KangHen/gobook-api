@@ -68,6 +68,7 @@ type ResponseError struct {
     Message string `json:"message"`
 }
 
+// categoryIndex responds to GET requests to "/categories" and returns a list of categories.
 func categoryIndex(w http.ResponseWriter, r *http.Request) {
 	var category = map[int]string {
         1: "Mythology",
@@ -90,7 +91,8 @@ func categoryIndex(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(data)
 }
 
-// bookIndex responds to GET requests to "/" and shows all books in the database.
+
+// bookIndex responds to GET requests to "/books" and returns a list of books.
 func bookIndex(w http.ResponseWriter, r *http.Request) {
     db := dbConn()
     query := `SELECT id, name, category_id, created_at FROM books;`
@@ -128,8 +130,7 @@ func bookIndex(w http.ResponseWriter, r *http.Request) {
     defer db.Close()
 }
 
-// bookShow responds to GET requests to "/books/{id}" and shows a book with matching id
-// from the database.
+// bookShow responds to GET requests to "/books/show/{id}" and returns the book with matching id.
 func bookShow(w http.ResponseWriter, r *http.Request) {
     vars := mux.Vars(r)
     bookId := vars["id"]
@@ -167,7 +168,6 @@ func bookShow(w http.ResponseWriter, r *http.Request) {
 }
 
 // bookStore responds to POST requests to "/books/store" and stores the book in the database.
-// It will redirect to "/books" if the book is successfully stored.
 func bookStore(w http.ResponseWriter, r *http.Request) {
     var book BookInput
 
@@ -224,10 +224,7 @@ func bookStore(w http.ResponseWriter, r *http.Request) {
     defer db.Close()
 }
 
-// bookUpdate responds to POST requests to "/books/update/{id}" and updates the book
-// with matching id in the database.
-//
-// It will redirect to "/books" if the book is successfully updated.
+// bookUpdate responds to POST requests to "/books/update/{id}" and updates the book with matching id in the database.
 func bookUpdate(w http.ResponseWriter, r *http.Request) {
     var bookId = mux.Vars(r)["id"]
 
@@ -265,10 +262,7 @@ func bookUpdate(w http.ResponseWriter, r *http.Request) {
 	defer db.Close()
 }
 
-// bookDelete responds to POST requests to "/books/delete/{id}" and deletes the book
-// with matching id in the database.
-//
-// It will redirect to "/books" if the book is successfully deleted.
+// bookDelete responds to POST requests to "/books/delete/{id}" and deletes the book with matching id in the database.
 func bookDelete(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Type", "application/json")
 
@@ -306,6 +300,19 @@ func bookDelete(w http.ResponseWriter, r *http.Request) {
 	defer db.Close()
 }
 
+// enableCORS sets CORS headers and handles preflight OPTIONS requests.
+//
+// This middleware should be used to allow cross-origin requests from
+// web browsers. The Access-Control-Allow-Origin header is set to "*"
+// to allow requests from any domain. This is potentially insecure and
+// should be adjusted according to your security needs.
+//
+// The Access-Control-Allow-Methods and Access-Control-Allow-Headers
+// headers are set to reasonable defaults for web browser requests.
+//
+// The middleware handles OPTIONS requests by returning a successful
+// response with the CORS headers. This is necessary for web browsers
+// to send cross-origin requests.
 func enableCORS(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Set CORS headers
